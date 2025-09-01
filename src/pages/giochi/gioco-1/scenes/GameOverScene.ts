@@ -19,7 +19,7 @@ export default class GameOverScene extends Phaser.Scene {
     })
     .setInteractive({ useHandCursor: true })
     .on("pointerdown", () => {
-       window.location.href = "/";
+       window.location.href = "/home";
     });
 
     // Bottone: Riavvia Gioco

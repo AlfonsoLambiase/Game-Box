@@ -43,10 +43,10 @@ export default class GameScene extends Phaser.Scene {
     this.ufo.setCollideWorldBounds(true);
 
     // Definisco cursori freccia (standard Phaser)
-    this.cursors = this.input.keyboard.createCursorKeys();
+    this.cursors = this.input.keyboard!.createCursorKeys();
 
     // Definisco i tasti WASD con tipo corretto
-    this.wasd = this.input.keyboard.addKeys({
+    this.wasd = this.input.keyboard!.addKeys({
       up: Phaser.Input.Keyboard.KeyCodes.W,
       down: Phaser.Input.Keyboard.KeyCodes.S,
       left: Phaser.Input.Keyboard.KeyCodes.A,
@@ -55,7 +55,7 @@ export default class GameScene extends Phaser.Scene {
 
     this.rays = this.physics.add.group();
 
-    this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.spaceKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
     this.zombies = this.physics.add.group();
 
@@ -67,7 +67,7 @@ export default class GameScene extends Phaser.Scene {
       { key: "zombie5", x: 500 },
     ];
 
-    // 👇 Qui creo direttamente gli zombie dentro il gruppo per farli muovere
+    // Qui creo direttamente gli zombie dentro il gruppo per farli muovere
     zombieData.forEach(({ key, x }) => {
       let vx = Phaser.Math.Between(-100, 100);
       while (vx === 0) vx = Phaser.Math.Between(-100, 100);

@@ -1,15 +1,19 @@
 import Phaser from "phaser";
 
+
+// Tipizzazione dei dati per ogni barattolo
 type BottleData = {
-  pro: string[];
-  sprites: Phaser.GameObjects.Image[];
+  pro: string[]; // array dei pro contenuti nel barattolo
+  sprites: Phaser.GameObjects.Image[]; // sprite visuali dei pro
 };
 
 export default class GameScene2 extends Phaser.Scene {
+  // Array dei barattoli e relativi dati
   private bottles: Phaser.GameObjects.Image[] = [];
   private bottleData: BottleData[] = [];
-  private winText: Phaser.GameObjects.Text | null = null;
+ 
 
+  // Gestione pro trascinato
   private floatingPro: Phaser.GameObjects.Image | null = null;
   private floatingProType: string | null = null;
   private floatingProOriginIndex: number | null = null;
@@ -19,7 +23,8 @@ export default class GameScene2 extends Phaser.Scene {
   }
 
   preload(): void {
-    this.load.image("sfondo", "/Gioco-2/sfondo.png");
+    // Caricamento immagini
+    this.load.image("sfondo", "/Gioco-2/market.png");
     this.load.image("bottle", "/Gioco-2/barattolo.png");
     this.load.image("pro1", "/Gioco-2/pro1.png");
     this.load.image("pro2", "/Gioco-2/pro2.png");
@@ -28,8 +33,10 @@ export default class GameScene2 extends Phaser.Scene {
   }
 
   create(): void {
+    // Aggiunge sfondo al centro dello schermo
     this.add.image(400, 300, "sfondo");
 
+    // Posizioni dei barattoli
     const bottlePositions = [
       { x: 100, y: 500 },
       { x: 250, y: 500 },
@@ -40,7 +47,24 @@ export default class GameScene2 extends Phaser.Scene {
 
     const proTypes = ["pro1", "pro2", "pro3", "pro4"];
 
-    // Ogni barattolo (tranne l'ultimo) ha 4 pro dello stesso tipo, diversi tra loro
+    // Creiamo un array di pro totali e lo mescoliamo
+    const allPros: string[] = [];
+    for (let i = 0; i < 4; i++) {
+      allPros.push(...proTypes); // 16 pro totali
+    }
+
+    // Funzione per mescolare array
+    const shuffle = <T>(array: T[]): T[] => {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    };
+
+    shuffle(allPros); // mescola i pro
+
+    // Creazione barattoli e assegnazione dei pro
     for (let i = 0; i < bottlePositions.length; i++) {
       const pos = bottlePositions[i];
       const sprite = this.add.image(pos.x, pos.y, "bottle")
@@ -50,43 +74,43 @@ export default class GameScene2 extends Phaser.Scene {
 
       let contents: string[] = [];
       if (i < 4) {
-        contents = Array(4).fill(proTypes[i]);
+        contents = allPros.splice(0, 4); // prende 4 pro mescolati
       }
 
       this.bottles.push(sprite);
       this.bottleData.push({ pro: contents, sprites: [] });
     }
 
-    this.winText = this.add.text(400, 50, '', {
-      fontSize: '32px',
-      color: '#ffffff',
-      backgroundColor: '#000000',
-      padding: { x: 10, y: 10 },
-    }).setOrigin(0.5).setVisible(false);
-
+    // Renderizza tutti i pro nei barattoli
     this.renderAllBottles();
   }
 
+  // Renderizza tutti i barattoli
   private renderAllBottles() {
     for (let i = 0; i < this.bottleData.length; i++) {
       this.renderBottleContents(i);
     }
   }
 
+  // Renderizza i pro di un singolo barattolo
   private renderBottleContents(index: number): void {
     const container = this.bottleData[index];
+
+    // Rimuove vecchi sprite
     container.sprites.forEach(s => s.destroy());
     container.sprites = [];
 
     const baseX = this.bottles[index].x;
     const baseY = this.bottles[index].y;
 
+    // Aggiunge sprite dei pro
     container.pro.forEach((proType, i) => {
       const sprite = this.add.image(baseX, baseY - 40 - i * 40, proType)
         .setOrigin(0.5)
         .setScale(0.5)
         .setInteractive();
 
+      // Quando il pro viene cliccato lo si prende
       sprite.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
         pointer.event.stopPropagation();
         this.pickUpPro(index, i);
@@ -96,17 +120,23 @@ export default class GameScene2 extends Phaser.Scene {
     });
   }
 
+  // Prende un pro da un barattolo per trascinarlo
   private pickUpPro(bottleIndex: number, proIndex: number) {
-    if (this.floatingPro) return;
+    if (this.floatingPro) return; // già uno in mano
 
     const container = this.bottleData[bottleIndex];
     const proType = container.pro[proIndex];
     if (!proType) return;
 
-    container.pro.splice(proIndex, 1);
+    container.pro.splice(proIndex, 1); // rimuove dal barattolo
     this.renderBottleContents(bottleIndex);
 
-    this.floatingPro = this.add.image(this.bottles[bottleIndex].x, this.bottles[bottleIndex].y - 40 - proIndex * 40, proType)
+    // Crea pro flottante
+    this.floatingPro = this.add.image(
+      this.bottles[bottleIndex].x,
+      this.bottles[bottleIndex].y - 40 - proIndex * 40,
+      proType
+    )
       .setOrigin(0.5)
       .setScale(0.6)
       .setDepth(1000)
@@ -115,9 +145,10 @@ export default class GameScene2 extends Phaser.Scene {
     this.floatingProType = proType;
     this.floatingProOriginIndex = bottleIndex;
 
+    // Listener per seguire il mouse/tocco
     this.input.on('pointermove', this.moveFloatingPro, this);
 
-    // Listener globale per rilasciare il pro sul barattolo
+    // Listener per rilasciare il pro
     this.input.once('pointerup', (pointer: Phaser.Input.Pointer) => {
       const targetIndex = this.bottles.findIndex(bottleSprite =>
         bottleSprite.getBounds().contains(pointer.x, pointer.y)
@@ -131,23 +162,27 @@ export default class GameScene2 extends Phaser.Scene {
     });
   }
 
+  // Muove il pro flottante insieme al mouse/tocco
   private moveFloatingPro(pointer: Phaser.Input.Pointer) {
     if (!this.floatingPro) return;
     this.floatingPro.x = pointer.x;
     this.floatingPro.y = pointer.y;
   }
 
+  // Posiziona il pro su un barattolo
   private placeFloatingPro(targetBottleIndex: number) {
     if (!this.floatingPro || this.floatingProType === null || this.floatingProOriginIndex === null) return;
 
     const targetData = this.bottleData[targetBottleIndex];
 
+    // Controlla se il barattolo è pieno
     if (targetData.pro.length >= 4) {
       this.shakeBottle(targetBottleIndex);
       this.cancelFloatingPro();
       return;
     }
 
+    // Tween per animare il movimento
     this.tweens.add({
       targets: this.floatingPro,
       x: this.bottles[targetBottleIndex].x,
@@ -170,6 +205,7 @@ export default class GameScene2 extends Phaser.Scene {
     this.input.off('pointermove', this.moveFloatingPro, this);
   }
 
+  // Riporta il pro al barattolo originale se non può essere messo
   private cancelFloatingPro() {
     if (!this.floatingPro || this.floatingProOriginIndex === null || this.floatingProType === null) return;
 
@@ -184,6 +220,7 @@ export default class GameScene2 extends Phaser.Scene {
     this.input.off('pointermove', this.moveFloatingPro, this);
   }
 
+  // Animazione shake quando il barattolo è pieno
   private shakeBottle(index: number): void {
     this.tweens.add({
       targets: this.bottles[index],
@@ -194,13 +231,15 @@ export default class GameScene2 extends Phaser.Scene {
     });
   }
 
+  // Controlla se il giocatore ha vinto
   private checkWinCondition(): void {
+    // Vittoria: ogni barattolo contiene pro dello stesso tipo oppure è vuoto
     const isWin = this.bottleData.every(b =>
       b.pro.length === 0 || (b.pro.length === 4 && b.pro.every(p => p === b.pro[0]))
     );
 
     if (isWin) {
-      this.winText?.setText("🎉 Hai vinto!").setVisible(true);
+       this.scene.start("GameOverScene-2");
     }
   }
 }

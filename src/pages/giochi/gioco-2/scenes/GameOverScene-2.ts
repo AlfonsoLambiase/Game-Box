@@ -19,7 +19,7 @@ export default class GameOverScene2 extends Phaser.Scene {
     })
       .setInteractive({ useHandCursor: true })
       .on("pointerdown", () => {
-        window.location.href = "/"; // torna alla homepage Next.js
+        window.location.href = "/home"; // torna alla homepage Next.js
       });
 
     const restartButton = this.add.text(270, 350, "Riavvia", {
